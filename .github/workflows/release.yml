@@ -148,7 +148,7 @@ jobs:
           echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
           echo "APPLE_APP_CERTIFICATE_PASSWORD is set: ${APPLE_APP_CERTIFICATE_PASSWORD:+yes}"
           echo "APPLE_INSTALL_CERTIFICATE is set: ${APPLE_INSTALL_CERTIFICATE:+yes}"
-          echo "APPLE_INSTALL_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALL_CERTIFICATE_PASSWORD:+yes}"
+          echo "APPLE_INSTALL_PASSWORD is set: ${APPLE_INSTALL_PASSWORD:+yes}"
           
           # Create variables
           APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
@@ -167,7 +167,7 @@ jobs:
 
           # Import both certificates to keychain
           security import $APP_CERT_PATH -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALL_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALL_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # Allow codesign to access the keychain
