@@ -148,7 +148,8 @@ jobs:
           echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
           echo "APPLE_APP_CERTIFICATE_PASSWORD is set: ${APPLE_APP_CERTIFICATE_PASSWORD:+yes}"
           echo "APPLE_INSTALL_CERTIFICATE is set: ${APPLE_INSTALL_CERTIFICATE:+yes}"
-          echo "APPLE_INSTALL_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALL_CERTIFICATE_PASSWORD
+          echo "APPLE_INSTALL_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALL_CERTIFICATE_PASSWORD:+yes}"
+          
           # Create variables
           APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
           INSTALLER_CERT_PATH=$RUNNER_TEMP/installer_certificate.p12
