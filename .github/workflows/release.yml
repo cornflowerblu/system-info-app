@@ -8,6 +8,12 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+  actions: write
+  id-token: write
+  deployments: write
 
 jobs:
   create-release:
