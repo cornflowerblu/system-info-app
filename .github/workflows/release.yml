@@ -3,7 +3,7 @@ name: Release Build
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: 'System Info App ${{ github.ref_name }}'
+          release_name: "System Info App ${{ github.ref_name }}"
           body: |
             Cross-platform system information application
 
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -93,127 +93,45 @@ jobs:
         if: matrix.platform.os == 'windows-latest'
         uses: lukka/get-cmake@latest
 
-      - name: Build C++ library (Windows)
+      - name: Build Windows Release
         if: matrix.platform.os == 'windows-latest'
-        shell: bash
+        shell: pwsh
         run: |
-          set -e
-          cd cpp_cross_platform
-          mkdir build
-          cd build
-          cmake ..
-          cmake --build . --config Release
-          # Verify the DLL was created
-          if [ ! -f "bin/Release/systemapi.dll" ]; then
-            echo "Error: systemapi.dll not found after build"
-            exit 1
-          fi
-          # Copy the DLL to where Tauri will bundle it
-          mkdir -p ../../src-tauri/lib
-          cp bin/Release/systemapi.dll ../../src-tauri/lib/
-            cd ../../src-tauri/lib
-            pwd
-            ls
-          echo "Successfully built and copied systemapi.dll"
+          .\scripts\build-windows.ps1
 
-      - name: Build C++ library (macOS)
-        if: matrix.platform.os == 'macos-latest'
-        run: |
-          set -e
-          cd cpp_cross_platform
-          mkdir build
-          cd build
-          cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }} ..
-          cmake --build . --config Release
-          # Verify the dylib was created
-          if [ ! -f "lib/libsystemapi.dylib" ]; then
-            echo "Error: libsystemapi.dylib not found after build"
-            exit 1
-          fi
-          # Copy the dylib to where Tauri will bundle it
-          mkdir -p ../../src-tauri/lib
-          cp lib/libsystemapi.dylib ../../src-tauri/lib/
-          cd ../../src-tauri/lib && ls
-          echo "Successfully built and copied libsystemapi.dylib"
-
-      - name: Import Apple Code Signing Certificates
+      - name: Build macOS Release
         if: matrix.platform.os == 'macos-latest'
         env:
-          APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
-          APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
-          APPLE_INSTALL_CERTIFICATE: ${{ secrets.APPLE_INSTALL_CERTIFICATE }}
-          APPLE_INSTALL_PASSWORD: ${{ secrets.APPLE_INSTALL_PASSWORD }}
-        run: |
-          # Temporarily check secrets (for debugging purposes only, remove in production)
-          echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
-          echo "APPLE_APP_CERTIFICATE_PASSWORD is set: ${APPLE_APP_CERTIFICATE_PASSWORD:+yes}"
-          echo "APPLE_INSTALL_CERTIFICATE is set: ${APPLE_INSTALL_CERTIFICATE:+yes}"
-          echo "APPLE_INSTALL_PASSWORD is set: ${APPLE_INSTALL_PASSWORD:+yes}"
-          
-          # Create variables
-          APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
-          INSTALLER_CERT_PATH=$RUNNER_TEMP/installer_certificate.p12
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-
-          # Decode certificates from base64
-          echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode -o $APP_CERT_PATH
-          echo -n "$APPLE_INSTALL_CERTIFICATE" | base64 --decode -o $INSTALLER_CERT_PATH
-
-          # Create temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # Import both certificates to keychain
-          security import $APP_CERT_PATH -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALL_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          # Allow codesign to access the keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # Debug: List all identities in the keychain
-          echo "Identities in keychain:"
-          security find-identity -v $KEYCHAIN_PATH
-
-          # Export keychain path for next steps
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-
-      - name: Sign C++ Library
-        if: matrix.platform.os == 'macos-latest'
-        run: |
-          # Debug: List all identities again
-          echo "Available identities in keychain:"
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
-
-          # Find the Developer ID Application certificate identity from our keychain
-          APP_IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
-          echo "Using identity: $APP_IDENTITY"
-
-          # Sign the dylib with hardened runtime and timestamp
-          codesign --force --sign "$APP_IDENTITY" \
-            --timestamp \
-            --options runtime \
-            src-tauri/lib/libsystemapi.dylib
-
-          # Verify the signature
-          codesign -vvv --deep --strict src-tauri/lib/libsystemapi.dylib
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_SIGNING_IDENTITY: ${{ matrix.platform.os == 'macos-latest' && '-' || '' }}
+          APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
+          APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
+        run: |
+          chmod +x scripts/build-macos.sh
+          bash scripts/build-macos.sh --sign
+
+      - name: Upload Release Assets
+        if: matrix.platform.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && '--target aarch64-apple-darwin' || '' }}
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: src-tauri/target/release/bundle/msi/system-info-app_0.1.0_x64_en-US.msi
+          asset_name: system-info-app-windows-x64.msi
+          asset_content_type: application/x-msi
+
+      - name: Upload Release Assets
+        if: matrix.platform.os == 'macos-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/system-info-app_0.1.0_aarch64.dmg
+          asset_name: system-info-app-macos-arm64.dmg
+          asset_content_type: application/x-apple-diskimage
 
   publish-release:
     needs: [create-release, release]
