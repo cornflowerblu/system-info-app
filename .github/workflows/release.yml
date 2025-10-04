@@ -153,11 +153,22 @@ jobs:
           # Allow codesign to access the keychain
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
+          # Debug: List all identities in the keychain
+          echo "Identities in keychain:"
+          security find-identity -v $KEYCHAIN_PATH
+
+          # Export keychain path for next steps
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+
       - name: Sign C++ Library
         if: matrix.platform.os == 'macos-latest'
         run: |
-          # Find the Developer ID Application certificate identity
-          APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+          # Debug: List all identities again
+          echo "Available identities in keychain:"
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
+
+          # Find the Developer ID Application certificate identity from our keychain
+          APP_IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
           echo "Using identity: $APP_IDENTITY"
 
           # Sign the dylib with hardened runtime and timestamp
