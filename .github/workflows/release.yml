@@ -96,9 +96,9 @@ jobs:
             echo "Error: systemapi.dll not found after build"
             exit 1
           fi
-          # Copy the DLL to where the Rust app can find it at runtime
-          mkdir -p ../../src-tauri/target/release
-          cp bin/Release/systemapi.dll ../../src-tauri/target/release/
+          # Copy the DLL to where Tauri will bundle it
+          mkdir -p ../../src-tauri/lib
+          cp bin/Release/systemapi.dll ../../src-tauri/lib/
           echo "Successfully built and copied systemapi.dll"
 
       - name: Build C++ library (macOS)
@@ -115,9 +115,9 @@ jobs:
             echo "Error: libsystemapi.dylib not found after build"
             exit 1
           fi
-          # Copy the dylib to where the Rust app can find it at runtime
-          mkdir -p ../../src-tauri/target/release
-          cp lib/libsystemapi.dylib ../../src-tauri/target/release/
+          # Copy the dylib to where Tauri will bundle it
+          mkdir -p ../../src-tauri/lib
+          cp lib/libsystemapi.dylib ../../src-tauri/lib/
           echo "Successfully built and copied libsystemapi.dylib"
 
       - name: Import Apple Code Signing Certificate

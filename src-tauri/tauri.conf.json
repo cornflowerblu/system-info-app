@@ -31,7 +31,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [],
+    "resources": [
+      "lib/systemapi.dll",
+      "lib/libsystemapi.dylib"
+    ],
     "macOS": {
       "entitlements": "entitlements.plist",
       "exceptionDomain": null,

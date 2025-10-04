@@ -102,11 +102,13 @@ fn load_cpp_library() -> Result<Library, String> {
 
     // Try multiple paths in order of preference
     let paths_to_try = vec![
-        // 1. Bundled with the app (production)
+        // 1. Same directory as executable
         exe_dir.as_ref().map(|dir| dir.join(lib_name)),
-        // 2. macOS app bundle Resources directory
+        // 2. Windows: resources folder next to exe
+        exe_dir.as_ref().map(|dir| dir.join("resources").join(lib_name)),
+        // 3. macOS app bundle Resources directory
         exe_dir.as_ref().map(|dir| dir.join("../Resources").join(lib_name)),
-        // 3. Development path
+        // 4. Development path
         Some(std::path::PathBuf::from(if cfg!(target_os = "windows") {
             "../cpp_cross_platform/build/bin/systemapi.dll"
         } else if cfg!(target_os = "macos") {
