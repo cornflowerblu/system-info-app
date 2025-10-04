@@ -13,7 +13,9 @@
       "mcp__atlassian__getVisibleJiraProjects",
       "mcp__atlassian__createJiraIssue",
       "mcp__atlassian__searchJiraIssuesUsingJql",
-      "mcp__atlassian__createConfluencePage"
+      "mcp__atlassian__createConfluencePage",
+      "Bash(chmod:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
