@@ -122,31 +122,48 @@ jobs:
           cd ../../src-tauri/lib && ls
           echo "Successfully built and copied libsystemapi.dylib"
 
-      - name: Import Apple Code Signing Certificate
+      - name: Import Apple Code Signing Certificates
         if: matrix.platform.os == 'macos-latest'
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
+          APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
+          APPLE_INSTALLER_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
           # Create variables
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
+          INSTALLER_CERT_PATH=$RUNNER_TEMP/installer_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
-          # Decode certificate from base64
-          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o $CERTIFICATE_PATH
+          # Decode certificates from base64
+          echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode -o $APP_CERT_PATH
+          echo -n "$APPLE_INSTALLER_CERTIFICATE" | base64 --decode -o $INSTALLER_CERT_PATH
 
           # Create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          # Import both certificates to keychain
+          security import $APP_CERT_PATH -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALLER_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # Allow codesign to access the keychain
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+      - name: Sign C++ Library
+        if: matrix.platform.os == 'macos-latest'
+        run: |
+          # Sign the dylib with hardened runtime and timestamp
+          codesign --force --sign "Developer ID Application" \
+            --timestamp \
+            --options runtime \
+            src-tauri/lib/libsystemapi.dylib
+
+          # Verify the signature
+          codesign -vvv --deep --strict src-tauri/lib/libsystemapi.dylib
 
       - name: Install frontend dependencies
         run: npm install
