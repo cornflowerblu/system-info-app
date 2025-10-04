@@ -142,7 +142,7 @@ jobs:
           APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
           APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
           APPLE_INSTALL_CERTIFICATE: ${{ secrets.APPLE_INSTALL_CERTIFICATE }}
-          APPLE_INSTALL_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALL_CERTIFICATE_PASSWORD }}
+          APPLE_INSTALL_PASSWORD: ${{ secrets.APPLE_INSTALL_PASSWORD }}
         run: |
           # Temporarily check secrets (for debugging purposes only, remove in production)
           echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
