@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "resources": [
+      "lib/systemapi.dll"
+    ]
+  }
+}

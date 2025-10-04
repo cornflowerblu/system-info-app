@@ -7,7 +7,13 @@
       "Bash(git add:*)",
       "Bash(git tag:*)",
       "Bash(git push:*)",
-      "Bash(gh secret set:*)"
+      "Bash(gh secret set:*)",
+      "mcp__atlassian__getConfluencePage",
+      "mcp__atlassian__search",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__createJiraIssue",
+      "mcp__atlassian__searchJiraIssuesUsingJql",
+      "mcp__atlassian__createConfluencePage"
     ],
     "deny": [],
     "ask": []

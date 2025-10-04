@@ -1,5 +1,5 @@
 use libloading::{Library, Symbol};
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::sync::Mutex;
 use tauri::State;
@@ -102,15 +102,18 @@ fn load_cpp_library() -> Result<Library, String> {
 
     // Try multiple paths in order of preference
     let paths_to_try = vec![
-        // 1. Same directory as executable
+        // 1. Same directory as executable (for dev runs with cargo run)
         exe_dir.as_ref().map(|dir| dir.join(lib_name)),
-        // 2. Windows: resources folder next to exe
-        exe_dir.as_ref().map(|dir| dir.join("resources").join(lib_name)),
+        // 2. Tauri resources directory structure
+        // Windows NSIS/MSI: resources are in lib/ subdirectory relative to exe
+        exe_dir.as_ref().map(|dir| dir.join("lib").join(lib_name)),
         // 3. macOS app bundle Resources directory
         exe_dir.as_ref().map(|dir| dir.join("../Resources").join(lib_name)),
-        // 4. Development path
+        // 4. Development path (src-tauri/lib)
+        Some(std::path::PathBuf::from(format!("lib/{}", lib_name))),
+        // 5. Development path (cpp build output)
         Some(std::path::PathBuf::from(if cfg!(target_os = "windows") {
-            "../cpp_cross_platform/build/bin/systemapi.dll"
+            "../cpp_cross_platform/build/bin/Release/systemapi.dll"
         } else if cfg!(target_os = "macos") {
             "../cpp_cross_platform/build/lib/libsystemapi.dylib"
         } else {
@@ -173,6 +176,6 @@ pub fn run() {
             calculate_factorial,
             get_platform
         ])
-        .run(tauri::generate_context!())
+        .run(tauri::generate_context!("tauri.conf.json"))
         .expect("error while running tauri application");
 }
