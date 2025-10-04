@@ -89,7 +89,7 @@ jobs:
           cd cpp_cross_platform
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake ..
           cmake --build . --config Release
           # Verify the DLL was created
           if [ ! -f "bin/Release/systemapi.dll" ]; then
@@ -99,8 +99,7 @@ jobs:
           # Copy the DLL to where Tauri will bundle it
           mkdir -p ../../src-tauri/lib
           cp bin/Release/systemapi.dll ../../src-tauri/lib/
-          # Create dummy .dylib so Tauri resources validation passes
-          touch ../../src-tauri/lib/libsystemapi.dylib
+          cd ../../src-tauri/lib && ls
           echo "Successfully built and copied systemapi.dll"
 
       - name: Build C++ library (macOS)
@@ -110,7 +109,7 @@ jobs:
           cd cpp_cross_platform
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }} ..
+          cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }} ..
           cmake --build . --config Release
           # Verify the dylib was created
           if [ ! -f "lib/libsystemapi.dylib" ]; then
@@ -120,8 +119,7 @@ jobs:
           # Copy the dylib to where Tauri will bundle it
           mkdir -p ../../src-tauri/lib
           cp lib/libsystemapi.dylib ../../src-tauri/lib/
-          # Create dummy .dll so Tauri resources validation passes
-          touch ../../src-tauri/lib/systemapi.dll
+          cd ../../src-tauri/lib && ls
           echo "Successfully built and copied libsystemapi.dylib"
 
       - name: Import Apple Code Signing Certificate
