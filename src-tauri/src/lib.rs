@@ -108,7 +108,7 @@ fn load_cpp_library() -> Result<Library, String> {
         // Windows NSIS/MSI: resources are in lib/ subdirectory relative to exe
         exe_dir.as_ref().map(|dir| dir.join("lib").join(lib_name)),
         // 3. macOS app bundle Resources directory
-        exe_dir.as_ref().map(|dir| dir.join("../Resources").join(lib_name)),
+        exe_dir.as_ref().map(|dir| dir.join("../Resources/lib").join(lib_name)),
         // 4. Development path (src-tauri/lib)
         Some(std::path::PathBuf::from(format!("lib/{}", lib_name))),
         // 5. Development path (cpp build output)
