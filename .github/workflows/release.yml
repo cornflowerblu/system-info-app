@@ -83,6 +83,7 @@ jobs:
 
       - name: Build C++ library (Windows)
         if: matrix.platform.os == 'windows-latest'
+        shell: bash
         run: |
           set -e
           cd cpp_cross_platform
