@@ -156,8 +156,12 @@ jobs:
       - name: Sign C++ Library
         if: matrix.platform.os == 'macos-latest'
         run: |
+          # Find the Developer ID Application certificate identity
+          APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+          echo "Using identity: $APP_IDENTITY"
+
           # Sign the dylib with hardened runtime and timestamp
-          codesign --force --sign "Developer ID Application" \
+          codesign --force --sign "$APP_IDENTITY" \
             --timestamp \
             --options runtime \
             src-tauri/lib/libsystemapi.dylib
