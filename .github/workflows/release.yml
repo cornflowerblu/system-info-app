@@ -1,0 +1,96 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            rust_target: x86_64-apple-darwin
+          - os: macos-latest
+            rust_target: aarch64-apple-darwin
+
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.rust_target }}
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.platform.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev cmake
+
+      - name: Install dependencies (macOS)
+        if: matrix.platform.os == 'macos-latest'
+        run: |
+          brew install cmake
+
+      - name: Install CMake (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        uses: lukka/get-cmake@latest
+
+      - name: Build C++ library (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        run: |
+          cd cpp_cross_platform
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . --config Release
+          cp bin/Release/systemapi.dll bin/systemapi.dll
+
+      - name: Build C++ library (macOS)
+        if: matrix.platform.os == 'macos-latest'
+        run: |
+          cd cpp_cross_platform
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }} ..
+          cmake --build . --config Release
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'System Info App v__VERSION__'
+          releaseBody: |
+            Cross-platform system information application
+
+            ## Features
+            - Computer name
+            - Total physical memory
+            - Current process ID
+            - Factorial calculator
+
+            ## Platform Support
+            - Windows (x64)
+            - macOS (Intel & Apple Silicon)
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && '--target aarch64-apple-darwin' || '' }}
