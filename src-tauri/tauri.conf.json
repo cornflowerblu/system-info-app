@@ -31,9 +31,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "../cpp_cross_platform/build/bin/systemapi.dll",
-      "../cpp_cross_platform/build/lib/libsystemapi.dylib"
-    ]
+    "resources": []
   }
 }

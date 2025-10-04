@@ -59,7 +59,9 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
           cmake --build . --config Release
-          cp bin/Release/systemapi.dll bin/systemapi.dll
+          # Copy the DLL to where the Rust app can find it at runtime
+          mkdir -p ../../src-tauri/target/release
+          cp bin/Release/systemapi.dll ../../src-tauri/target/release/
 
       - name: Build C++ library (macOS)
         if: matrix.platform.os == 'macos-latest'
@@ -69,6 +71,9 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }} ..
           cmake --build . --config Release
+          # Copy the dylib to where the Rust app can find it at runtime
+          mkdir -p ../../src-tauri/target/release
+          cp lib/libsystemapi.dylib ../../src-tauri/target/release/
 
       - name: Install frontend dependencies
         run: npm install
