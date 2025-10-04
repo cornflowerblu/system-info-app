@@ -70,7 +70,13 @@ jobs:
         if: matrix.platform.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev cmake
+          # Install required packages, one per line for clarity
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            cmake
 
       - name: Install dependencies (macOS)
         if: matrix.platform.os == 'macos-latest'
@@ -99,7 +105,9 @@ jobs:
           # Copy the DLL to where Tauri will bundle it
           mkdir -p ../../src-tauri/lib
           cp bin/Release/systemapi.dll ../../src-tauri/lib/
-          cd ../../src-tauri/lib && ls
+            cd ../../src-tauri/lib
+            pwd
+            ls
           echo "Successfully built and copied systemapi.dll"
 
       - name: Build C++ library (macOS)
@@ -127,9 +135,14 @@ jobs:
         env:
           APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
           APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
-          APPLE_INSTALLER_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_INSTALLER_CERTIFICATE: ${{ secrets.APPLE_INSTALLER_CERTIFICATE }}
+          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
         run: |
+          # Temporarily check secrets (for debugging purposes only, remove in production)
+          echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
+          echo "APPLE_APP_CERTIFICATE_PASSWORD is set: ${APPLE_APP_CERTIFICATE_PASSWORD:+yes}"
+          echo "APPLE_INSTALLER_CERTIFICATE is set: ${APPLE_INSTALLER_CERTIFICATE:+yes}"
+          echo "APPLE_INSTALLER_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALLER_CERTIFICATE_PASSWORD
           # Create variables
           APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
           INSTALLER_CERT_PATH=$RUNNER_TEMP/installer_certificate.p12
