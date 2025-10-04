@@ -99,6 +99,8 @@ jobs:
           # Copy the DLL to where Tauri will bundle it
           mkdir -p ../../src-tauri/lib
           cp bin/Release/systemapi.dll ../../src-tauri/lib/
+          # Create dummy .dylib so Tauri resources validation passes
+          touch ../../src-tauri/lib/libsystemapi.dylib
           echo "Successfully built and copied systemapi.dll"
 
       - name: Build C++ library (macOS)
@@ -118,6 +120,8 @@ jobs:
           # Copy the dylib to where Tauri will bundle it
           mkdir -p ../../src-tauri/lib
           cp lib/libsystemapi.dylib ../../src-tauri/lib/
+          # Create dummy .dll so Tauri resources validation passes
+          touch ../../src-tauri/lib/systemapi.dll
           echo "Successfully built and copied libsystemapi.dylib"
 
       - name: Import Apple Code Signing Certificate
@@ -160,3 +164,14 @@ jobs:
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.platform.rust_target == 'aarch64-apple-darwin' && '--target aarch64-apple-darwin' || '' }}
+
+  publish-release:
+    needs: [create-release, release]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Publish Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit ${{ github.ref_name }} --draft=false --repo ${{ github.repository }}
