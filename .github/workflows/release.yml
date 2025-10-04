@@ -135,14 +135,14 @@ jobs:
         env:
           APPLE_APP_CERTIFICATE: ${{ secrets.APPLE_APP_CERTIFICATE }}
           APPLE_APP_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_APP_CERTIFICATE_PASSWORD }}
-          APPLE_INSTALLER_CERTIFICATE: ${{ secrets.APPLE_INSTALLER_CERTIFICATE }}
-          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
+          APPLE_INSTALL_CERTIFICATE: ${{ secrets.APPLE_INSTALL_CERTIFICATE }}
+          APPLE_INSTALL_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALL_CERTIFICATE_PASSWORD }}
         run: |
           # Temporarily check secrets (for debugging purposes only, remove in production)
           echo "APPLE_APP_CERTIFICATE is set: ${APPLE_APP_CERTIFICATE:+yes}"
           echo "APPLE_APP_CERTIFICATE_PASSWORD is set: ${APPLE_APP_CERTIFICATE_PASSWORD:+yes}"
-          echo "APPLE_INSTALLER_CERTIFICATE is set: ${APPLE_INSTALLER_CERTIFICATE:+yes}"
-          echo "APPLE_INSTALLER_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALLER_CERTIFICATE_PASSWORD
+          echo "APPLE_INSTALL_CERTIFICATE is set: ${APPLE_INSTALL_CERTIFICATE:+yes}"
+          echo "APPLE_INSTALL_CERTIFICATE_PASSWORD is set: ${APPLE_INSTALL_CERTIFICATE_PASSWORD
           # Create variables
           APP_CERT_PATH=$RUNNER_TEMP/app_certificate.p12
           INSTALLER_CERT_PATH=$RUNNER_TEMP/installer_certificate.p12
@@ -151,7 +151,7 @@ jobs:
 
           # Decode certificates from base64
           echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode -o $APP_CERT_PATH
-          echo -n "$APPLE_INSTALLER_CERTIFICATE" | base64 --decode -o $INSTALLER_CERT_PATH
+          echo -n "$APPLE_INSTALL_CERTIFICATE" | base64 --decode -o $INSTALLER_CERT_PATH
 
           # Create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -160,7 +160,7 @@ jobs:
 
           # Import both certificates to keychain
           security import $APP_CERT_PATH -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALLER_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALLER_CERT_PATH -P "$APPLE_INSTALL_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # Allow codesign to access the keychain
