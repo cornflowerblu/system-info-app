@@ -87,24 +87,59 @@ fn get_platform() -> String {
 
 // Load the C++ library
 fn load_cpp_library() -> Result<Library, String> {
-    let lib_path = if cfg!(target_os = "windows") {
-        "../cpp_cross_platform/build/bin/systemapi.dll"
+    // Get the path to the executable directory
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|p| p.to_path_buf()));
+
+    let lib_name = if cfg!(target_os = "windows") {
+        "systemapi.dll"
     } else if cfg!(target_os = "macos") {
-        "../cpp_cross_platform/build/lib/libsystemapi.dylib"
+        "libsystemapi.dylib"
     } else {
-        "../cpp_cross_platform/build/lib/libsystemapi.so"
+        "libsystemapi.so"
     };
 
-    unsafe {
-        Library::new(lib_path).map_err(|e| {
-            format!(
-                "Failed to load library from {}: {}\n\n\
-                Make sure to build the C++ library first:\n\
-                cd cpp_cross_platform && mkdir build && cd build && cmake .. && cmake --build .",
-                lib_path, e
-            )
-        })
+    // Try multiple paths in order of preference
+    let paths_to_try = vec![
+        // 1. Bundled with the app (production)
+        exe_dir.as_ref().map(|dir| dir.join(lib_name)),
+        // 2. macOS app bundle Resources directory
+        exe_dir.as_ref().map(|dir| dir.join("../Resources").join(lib_name)),
+        // 3. Development path
+        Some(std::path::PathBuf::from(if cfg!(target_os = "windows") {
+            "../cpp_cross_platform/build/bin/systemapi.dll"
+        } else if cfg!(target_os = "macos") {
+            "../cpp_cross_platform/build/lib/libsystemapi.dylib"
+        } else {
+            "../cpp_cross_platform/build/lib/libsystemapi.so"
+        })),
+    ];
+
+    for path_option in paths_to_try {
+        if let Some(path) = path_option {
+            if path.exists() {
+                unsafe {
+                    match Library::new(&path) {
+                        Ok(lib) => {
+                            println!("✓ Loaded C++ library from: {}", path.display());
+                            return Ok(lib);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to load from {}: {}", path.display(), e);
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    Err(format!(
+        "Failed to load library '{}' from any location.\n\n\
+        For development, make sure to build the C++ library first:\n\
+        cd cpp_cross_platform && mkdir build && cd build && cmake .. && cmake --build .",
+        lib_name
+    ))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
