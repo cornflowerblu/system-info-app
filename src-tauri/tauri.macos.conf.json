@@ -2,6 +2,10 @@
   "bundle": {
     "resources": [
       "lib/libsystemapi.dylib"
-    ]
+    ],
+    "macOS": {
+      "signingIdentity": "Developer ID Application: Roger Urich (H7JMZ6X53B)",
+      "providerShortName": "H7JMZ6X53B"
+    }
   }
 }
