@@ -224,16 +224,19 @@ if [ "$SIGN_FLAG" = true ]; then
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
         # Debug: List all identities in the keychain
-        color_output "  Identities in keychain:" "gray"
+        color_output "  All identities in keychain:" "gray"
         security find-identity -v "$KEYCHAIN_PATH"
+
+        color_output "  Codesigning identities in keychain:" "gray"
+        security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
         # Clean up temp cert file
         rm "$CERT_PATH"
 
         print_success "Certificates imported to temporary keychain"
 
-        # Find identity from the keychain we just created
-        APP_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+        # Find identity from the keychain we just created (try without -p filter first)
+        APP_IDENTITY=$(security find-identity -v "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
     else
         # Find the Developer ID Application certificate from default keychain (local dev)
         APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
