@@ -231,16 +231,31 @@ if [ "$SIGN_FLAG" = true ]; then
         rm "$CERT_PATH"
 
         print_success "Certificates imported to temporary keychain"
+
+        # Find identity from the keychain we just created
+        APP_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+    else
+        # Find the Developer ID Application certificate from default keychain (local dev)
+        APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
     fi
 
-    # Find the Developer ID Application certificate
-    APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+    # Use the identity we found
+    if [ -n "$APPLE_APP_CERTIFICATE" ] && [ -n "$APP_IDENTITY" ]; then
+        # In CI, identity found from imported cert
+        true
+    elif [ -z "$APPLE_APP_CERTIFICATE" ]; then
+        # Local dev - already searched above
+        true
+    fi
 
     if [ -z "$APP_IDENTITY" ]; then
         color_output "⚠ Warning: No Developer ID Application certificate found" "yellow"
         color_output "  Skipping code signing (local builds can run without signing)" "yellow"
     else
         color_output "  Using identity: $APP_IDENTITY" "gray"
+
+        # Export identity for Tauri to use during app bundle signing
+        export APPLE_SIGNING_IDENTITY="$APP_IDENTITY"
 
         # Sign the dylib with hardened runtime and timestamp
         codesign --force --sign "$APP_IDENTITY" \
