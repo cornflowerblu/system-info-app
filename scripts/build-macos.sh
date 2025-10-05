@@ -201,26 +201,22 @@ if [ "$SIGN_FLAG" = true ]; then
     if [ -n "$APPLE_APP_CERTIFICATE" ]; then
         color_output "  Detected CI environment - importing certificates..." "gray"
 
-        # Create temporary files and keychain
-        CERT_PATH=$(mktemp)
+        # Create temporary keychain
         KEYCHAIN_PATH=$(mktemp -d)/signing.keychain-db
         KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-
-        # Decode certificate from base64 env var
-        echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode > "$CERT_PATH"
-
-        # Create temporary keychain
         security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+
+        # Set keychain settings and make it default
+        security default-keychain -s "$KEYCHAIN_PATH"
+        security set-keychain-settings -t 3600 -u "$KEYCHAIN_PATH"
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-        # Set as default keychain
-        security default-keychain -s "$KEYCHAIN_PATH"
-
-        # Import certificate
+        # Import certificate from base64 env var
+        CERT_PATH=$(mktemp)
+        echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode > "$CERT_PATH"
         security import "$CERT_PATH" -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
 
-        # Append to keychain search list
+        # Append to keychain search list (don't replace)
         EXISTING_KEYCHAINS=$(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ')
         security list-keychain -d user -s "$KEYCHAIN_PATH" $EXISTING_KEYCHAINS
 
