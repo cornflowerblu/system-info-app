@@ -227,6 +227,10 @@ if [ "$SIGN_FLAG" = true ]; then
         # Allow codesign to access the keychain
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
+        # Debug: List all identities in the keychain
+        color_output "  Identities in keychain:" "gray"
+        security find-identity -v "$KEYCHAIN_PATH"
+
         # Clean up temp cert file
         rm "$CERT_PATH"
 
