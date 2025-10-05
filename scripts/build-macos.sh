@@ -197,6 +197,42 @@ cd ../..
 if [ "$SIGN_FLAG" = true ]; then
     print_step "Signing C++ library..."
 
+    # If running in CI (APPLE_APP_CERTIFICATE env var exists), import certificate first
+    if [ -n "$APPLE_APP_CERTIFICATE" ]; then
+        color_output "  Detected CI environment - importing certificates..." "gray"
+
+        # Create temporary files and keychain
+        CERT_PATH=$(mktemp)
+        KEYCHAIN_PATH=$(mktemp -d)/signing.keychain-db
+        KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+        # Decode certificate from base64 env var
+        echo -n "$APPLE_APP_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+
+        # Create temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+        # Set as default keychain
+        security default-keychain -s "$KEYCHAIN_PATH"
+
+        # Import certificate
+        security import "$CERT_PATH" -P "$APPLE_APP_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+
+        # Append to keychain search list
+        EXISTING_KEYCHAINS=$(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ')
+        security list-keychain -d user -s "$KEYCHAIN_PATH" $EXISTING_KEYCHAINS
+
+        # Allow codesign to access the keychain
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+        # Clean up temp cert file
+        rm "$CERT_PATH"
+
+        print_success "Certificates imported to temporary keychain"
+    fi
+
     # Find the Developer ID Application certificate
     APP_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
 
